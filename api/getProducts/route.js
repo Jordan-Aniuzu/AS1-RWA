@@ -1,27 +1,23 @@
 export async function GET(req, res) {
-    // Make a note we are on
-    // the api. This goes to the console.
+    //DATABASE CONNECTION FOR PRODUCTS
     console.log("in the api page")
 
 
-    // =================================================
     const { MongoClient } = require('mongodb');
-    const url = 'mongodb://root:example@localhost:27017/';
+    const url = 'mongodb://root:example@localhost:27017/'; 
     const client = new MongoClient(url);
-    const dbName = 'app'; // database name
+    const dbName = 'app'; // DB NAME
 
 
     await client.connect();
     console.log('Connected successfully to server');
     const db = client.db(dbName);
-    const collection = db.collection('products'); // collection name
+    const collection = db.collection('products'); // COLLECTS FROM THE PRODUCTS COLLECTION IN DB
     const findResult = await collection.find({}).toArray();
     console.log('Found documents =>', findResult);
 
 
 
-    //==========================================================
-    // at the end of the process we need to send something back.
     return Response.json(findResult)
 
 
