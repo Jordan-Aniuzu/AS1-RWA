@@ -1,57 +1,58 @@
 'use client';
 
 import * as React from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import Link from '@mui/material/Link';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
 import TextField from '@mui/material/TextField';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import IconButton from '@mui/material/IconButton';   // IMPORTS
+import MenuIcon from '@mui/icons-material/Menu';
 
 export default function MyApp() {
   const [temperature, setTemperature] = useState(null);
   const [donuts, setDonuts] = useState([]);
-  const [cart, setCart] = useState([]); // State to track cart items
+  const [cart, setCart] = useState([]);
   const router = useRouter();
 
+  // GETS WEATHER DATA FROM API
   const fetchWeather = async () => {
     try {
       const response = await fetch(
-        'http://api.weatherapi.com/v1/current.json?key=f8fa04efce5147c0b77214832242410&q=Dublin'
+        'http://api.weatherapi.com/v1/current.json?key=f8fa04efce5147c0b77214832242410&q=Dublin' 
       );
       const data = await response.json();
       setTemperature(data.current.temp_c);
     } catch (error) {
-      console.error('Error fetching weather data:', error);
+      console.error('Error fetching weather data:', error);  // LOGS ERROR IF WRONG
     }
   };
+
+
 
   useEffect(() => {
     fetchWeather();
   }, []);
 
+  // Fetch donuts data
   useEffect(() => {
     const fetchDonuts = async () => {
       try {
-        const response = await fetch('/api/getDonuts');
-        if (!response.ok) {
-          throw new Error('Failed to fetch donuts data');
-        }
+        const response = await fetch('/api/getDonuts'); // API TO GET DONUT INFO
+        if (!response.ok) throw new Error('Failed to fetch donuts data');
         const data = await response.json();
         setDonuts(data);
       } catch (error) {
-        console.log('Error fetching donuts data:', error);
+        console.error('Error fetching donuts data:', error);
       }
     };
     fetchDonuts();
   }, []);
 
-  // Function to handle adding donuts to the cart
+  // HANDLING FOR ADDING DONUTS TO CART
   const handleAddToCart = (donut, quantity) => {
     const item = {
       ...donut,
@@ -60,22 +61,24 @@ export default function MyApp() {
     };
 
     setCart((prevCart) => {
-      const existingItem = prevCart.find((cartItem) => cartItem._id === donut._id);
+      const updatedCart = [...prevCart];
+      const existingItem = updatedCart.find((cartItem) => cartItem._id === donut._id);  // INFORMATION TO BE PASSED 
       if (existingItem) {
-        return prevCart.map((cartItem) =>
-          cartItem._id === donut._id
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity, total: cartItem.total + item.total }
-            : cartItem
-        );
+        existingItem.quantity += item.quantity;
+        existingItem.total += item.total;
       } else {
-        return [...prevCart, item];
+        updatedCart.push(item);
       }
+
+      //SAVES THE UPDATED INFORMATION TO LOCAL STORAGE
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      return updatedCart;
     });
   };
 
-  // Function to navigate to the Cart page
+  // INFO GOES TO CART PAGE
   const goToCart = () => {
-    window.location.href = '../CART';
+    router.push('/CART');
   };
 
   return (
@@ -89,38 +92,22 @@ export default function MyApp() {
             Krispy Kreme
           </Typography>
           {temperature !== null ? (
-            <Typography variant="body1" color="inherit">
-              Current Temperature: {temperature}°C
-            </Typography>
+            <Typography variant="body1">Current Temperature: {temperature}°C</Typography>
           ) : (
-            <Typography variant="body1" color="inherit">
-              Loading weather...
-            </Typography>
+            <Typography variant="body1">Loading weather...</Typography>
           )}
-          <Button color="inherit">Home</Button>
-          <Button color="inherit">
-            <Link href="../" style={{ textDecoration: 'none', color: 'inherit' }}>
-              Logout
-            </Link>
-          </Button>
           <Button onClick={goToCart} color="inherit">
             Cart
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* Dynamically display donuts */}
+      {/* Display donuts */}
       {donuts.length > 0 ? (
         donuts.map((donut) => (
           <Box
             key={donut._id}
-            component="section"
-            sx={{
-              p: 6,
-              fontSize: '23px',
-              border: '3px dashed grey',
-              textAlign: 'center',
-            }}
+            sx={{ p: 4, border: '1px solid gray', margin: '16px', borderRadius: '8px' }}
           >
             <Typography variant="h6">{donut.name}</Typography>
             <Typography variant="body1">{donut.description}</Typography>
@@ -130,14 +117,13 @@ export default function MyApp() {
               alt={donut.name}
               style={{ width: '150px', height: '150px', marginTop: '10px' }}
             />
-            {/* Quantity input */}
             <TextField
               type="number"
               label="Quantity"
               variant="outlined"
               size="small"
-              sx={{ margin: '10px 0', width: '100px' }}
               defaultValue={1}
+              sx={{ margin: '10px 0', width: '100px' }}
               inputProps={{ min: 1 }}
               id={`quantity-${donut._id}`}
             />
@@ -156,9 +142,7 @@ export default function MyApp() {
           </Box>
         ))
       ) : (
-        <Typography variant="body1" color="inherit">
-          Loading donut data...
-        </Typography>
+        <Typography>Loading donuts...</Typography>
       )}
     </Box>
   );
